@@ -44,7 +44,11 @@ const typeDefs = gql`
     changed: DateTime
   }
 
+  union SearchResult = Lift | Trail
+  
   type Query {
+    search(term: String!): [SearchResult!]!
+    
     allLifts(status: LiftStatus): [Lift!]!
     findLiftById(id: ID!): Lift!
     liftCount(status: LiftStatus!): Int!
@@ -60,6 +64,12 @@ const typeDefs = gql`
 `;
 const resolvers = {
   Query: {
+    search: (parent, args) =>{
+      let liftsAndTrails = [...lifts, ...trails];
+      const byTerm = term => item =>
+          term.toLowerCase() === item.id.substring(0, term.length).toLowerCase();
+      return liftsAndTrails.filtergit (byTerm(args.term));
+    },
     allLifts: (parent, { status }) => {
       if (!status) {
         return lifts;
@@ -109,6 +119,9 @@ const resolvers = {
       updatedTrail.status = status;
       return updatedTrail;
     }
+  },
+  SearchResult: {
+    __resolveType: parent => parent.elevationGain ? "Lift" : "Trail"
   },
   Lift: {
     trailAccess: parent =>
